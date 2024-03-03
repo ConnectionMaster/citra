@@ -9,7 +9,7 @@
 #include "core/rpc/packet.h"
 #include "core/rpc/udp_server.h"
 
-namespace RPC {
+namespace Core::RPC {
 
 class UDPServer::Impl {
 public:
@@ -73,8 +73,7 @@ private:
             LOG_WARNING(RPC_Server, "Failed to send reply: {}", error.message());
         } else {
             LOG_INFO(RPC_Server, "Sent reply version({}) id=({}) type=({}) size=({})",
-                     reply_packet.GetVersion(), reply_packet.GetId(),
-                     static_cast<u32>(reply_packet.GetPacketType()),
+                     reply_packet.GetVersion(), reply_packet.GetId(), reply_packet.GetPacketType(),
                      reply_packet.GetPacketDataSize());
         }
     }
@@ -94,4 +93,4 @@ UDPServer::UDPServer(std::function<void(std::unique_ptr<Packet>)> new_request_ca
 
 UDPServer::~UDPServer() = default;
 
-} // namespace RPC
+} // namespace Core::RPC

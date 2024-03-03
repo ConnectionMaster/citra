@@ -10,9 +10,9 @@
 #include "core/core.h"
 #include "core/memory.h"
 
-ARMul_State::ARMul_State(Core::System* system, Memory::MemorySystem& memory,
+ARMul_State::ARMul_State(Core::System& system_, Memory::MemorySystem& memory_,
                          PrivilegeMode initial_mode)
-    : system(system), memory(memory) {
+    : system{system_}, memory{memory_} {
     Reset();
     ChangePrivilegeMode(initial_mode);
 }
@@ -110,7 +110,7 @@ void ARMul_State::Reset() {
     Reg[13] = 0x10000000;
     Reg[15] = 0;
 
-    Cpsr = INTBITS | SVC32MODE;
+    Cpsr = static_cast<u32>(INTBITS) | static_cast<u32>(SVC32MODE);
     Mode = SVC32MODE;
     Bank = SVCBANK;
 
@@ -182,13 +182,16 @@ void ARMul_State::ResetMPCoreCP15Registers() {
     CP15[CP15_MAIN_TLB_LOCKDOWN_ATTRIBUTE] = 0x00000000;
     CP15[CP15_TLB_DEBUG_CONTROL] = 0x00000000;
 }
-
+#ifdef ANDROID
+static void CheckMemoryBreakpoint(u32 address, GDBStub::BreakpointType type) {}
+#else
 static void CheckMemoryBreakpoint(u32 address, GDBStub::BreakpointType type) {
     if (GDBStub::IsServerEnabled() && GDBStub::CheckBreakpoint(address, type)) {
         LOG_DEBUG(Debug, "Found memory breakpoint @ {:08x}", address);
         GDBStub::Break(true);
     }
 }
+#endif
 
 u8 ARMul_State::ReadMemory8(u32 address) const {
     CheckMemoryBreakpoint(address, GDBStub::BreakpointType::Read);
@@ -606,9 +609,8 @@ void ARMul_State::ServeBreak() {
         DEBUG_ASSERT(Reg[15] == last_bkpt.address);
     }
 
-    DEBUG_ASSERT(system != nullptr);
-    Kernel::Thread* thread = system->Kernel().GetCurrentThreadManager().GetCurrentThread();
-    system->GetRunningCore().SaveContext(thread->context);
+    Kernel::Thread* thread = system.Kernel().GetCurrentThreadManager().GetCurrentThread();
+    system.GetRunningCore().SaveContext(thread->context);
 
     if (last_bkpt_hit || GDBStub::IsMemoryBreak() || GDBStub::GetCpuStepFlag()) {
         last_bkpt_hit = false;

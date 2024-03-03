@@ -7,9 +7,20 @@
 #include <array>
 #include <cstddef>
 #include <string_view>
-#include "common/logging/log.h"
+#include "common/logging/types.h"
 
-namespace Log {
+namespace Common::Log {
+
+/**
+ * Returns the name of the passed log class as a C-string. Subclasses are separated by periods
+ * instead of underscores as in the enumeration.
+ */
+const char* GetLogClassName(Class log_class);
+
+/**
+ * Returns the name of the passed log level as a C-string.
+ */
+const char* GetLevelName(Level log_level);
 
 /**
  * Implements a log message filter which allows different log classes to have different minimum
@@ -45,7 +56,11 @@ public:
     /// Matches class/level combination against the filter, returning true if it passed.
     bool CheckMessage(Class log_class, Level level) const;
 
+    /// Returns true if any logging classes are set to debug
+    bool IsDebug() const;
+
 private:
     std::array<Level, static_cast<std::size_t>(Class::Count)> class_levels;
 };
-} // namespace Log
+
+} // namespace Common::Log

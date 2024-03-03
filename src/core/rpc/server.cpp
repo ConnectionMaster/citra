@@ -1,17 +1,16 @@
-#include <functional>
+// Copyright 2019 Citra Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
 #include "core/core.h"
 #include "core/rpc/packet.h"
 #include "core/rpc/rpc_server.h"
 #include "core/rpc/server.h"
 #include "core/rpc/udp_server.h"
 
-namespace RPC {
+namespace Core::RPC {
 
-Server::Server(RPCServer& rpc_server) : rpc_server(rpc_server) {}
-
-Server::~Server() = default;
-
-void Server::Start() {
+Server::Server(Core::System& system_) : rpc_server{system_} {
     const auto callback = [this](std::unique_ptr<Packet> new_request) {
         NewRequestCallback(std::move(new_request));
     };
@@ -23,7 +22,7 @@ void Server::Start() {
     }
 }
 
-void Server::Stop() {
+Server::~Server() {
     udp_server.reset();
     NewRequestCallback(nullptr); // Notify the RPC server to end
 }
@@ -31,12 +30,12 @@ void Server::Stop() {
 void Server::NewRequestCallback(std::unique_ptr<RPC::Packet> new_request) {
     if (new_request) {
         LOG_INFO(RPC_Server, "Received request version={} id={} type={} size={}",
-                 new_request->GetVersion(), new_request->GetId(),
-                 static_cast<u32>(new_request->GetPacketType()), new_request->GetPacketDataSize());
+                 new_request->GetVersion(), new_request->GetId(), new_request->GetPacketType(),
+                 new_request->GetPacketDataSize());
     } else {
         LOG_INFO(RPC_Server, "Received end packet");
     }
     rpc_server.QueueRequest(std::move(new_request));
 }
 
-}; // namespace RPC
+}; // namespace Core::RPC

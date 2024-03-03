@@ -87,7 +87,7 @@ ValidationError SoftwareKeyboard::ValidateInput(const std::string& input) const 
     default:
         // TODO(jroweboy): What does hardware do in this case?
         LOG_CRITICAL(Frontend, "Application requested unknown validation method. Method: {}",
-                     static_cast<u32>(config.accept_mode));
+                     config.accept_mode);
         UNREACHABLE();
     }
 
@@ -144,11 +144,12 @@ const KeyboardData& SoftwareKeyboard::ReceiveData() {
     return data;
 }
 
-void DefaultKeyboard::Execute(const Frontend::KeyboardConfig& config) {
-    SoftwareKeyboard::Execute(config);
+DefaultKeyboard::DefaultKeyboard(Core::System& system_) : system(system_) {}
 
-    auto cfg = Service::CFG::GetModule(Core::System::GetInstance());
-    ASSERT_MSG(cfg, "CFG Module missing!");
+void DefaultKeyboard::Execute(const Frontend::KeyboardConfig& config_) {
+    SoftwareKeyboard::Execute(config_);
+
+    auto cfg = Service::CFG::GetModule(system);
     std::string username = Common::UTF16ToUTF8(cfg->GetUsername());
     switch (this->config.button_config) {
     case ButtonConfig::None:
